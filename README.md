@@ -1,3 +1,3 @@
-# Notify V14
+# Notify
 
 *coming soon*
