@@ -60,9 +60,11 @@ public class Notify implements Serializable {
 	}
 
 	/**
-	 * Get the current permission. (Returned value may not be synced!)
+	 * Returns if the permission has been granted by the user (Returned value may
+	 * not be synced). Use {@link #runAfterGetPermission(Runnable)} if you want to
+	 * make sure, the value is 100 % up to date with the server.
 	 * 
-	 * @return
+	 * @return boolean
 	 */
 	public boolean getPermission() {
 		updatePermission();
@@ -70,6 +72,12 @@ public class Notify implements Serializable {
 
 	}
 
+	/**
+	 * Gets the current permission and lets you use it in the given action, after
+	 * the permission has been updated.
+	 * 
+	 * @param action {@link Runnable}
+	 */
 	public void runAfterGetPermission(Runnable action) {
 		Objects.requireNonNull(action);
 		updatePermission(action);
@@ -110,9 +118,9 @@ public class Notify implements Serializable {
 	 * events will work due to the other events being sent before the listeners can
 	 * be added. If you want to listen to those events aswell, be sure to use
 	 * {@link #createNotification(String, String)} or
-	 * {@link #createNotification(String, String, String)} --> add the listeners you
-	 * need and use {@link Notification#send()} / {@link Notification#send(int)}
-	 * afterwards.
+	 * {@link #createNotification(String, String, String)} afterwards add the
+	 * listeners you need and use {@link Notification#send()} /
+	 * {@link Notification#send(int)} to send the notification.
 	 * 
 	 * @param title the title
 	 * @param body  the description
@@ -138,9 +146,9 @@ public class Notify implements Serializable {
 	 * events will work due to the other events being sent before the listeners can
 	 * be added. If you want to listen to those events aswell, be sure to use
 	 * {@link #createNotification(String, String)} or
-	 * {@link #createNotification(String, String, String)} --> add the listeners you
-	 * need and use {@link Notification#send()} / {@link Notification#send(int)}
-	 * afterwards.
+	 * {@link #createNotification(String, String, String)} afterwards add the
+	 * listeners you need and use {@link Notification#send()} /
+	 * {@link Notification#send(int)} to send the notification.
 	 * 
 	 * @param title the title
 	 * @param body  the description
@@ -161,9 +169,9 @@ public class Notify implements Serializable {
 	 * {@link Notification#send()} or {@link Notification#send(int)} to send it to
 	 * the user.
 	 * 
-	 * @param title
-	 * @param body
-	 * @param icon
+	 * @param title title of the notification
+	 * @param body  body of the notification
+	 * @param icon  icon of the notification (uri, filepath or url)
 	 * @return {@link Notification}
 	 */
 	public Notification createNotification(String title, String body, String icon) {
@@ -175,8 +183,8 @@ public class Notify implements Serializable {
 	 * {@link Notification#send()} or {@link Notification#send(int)} to send it to
 	 * the user.
 	 * 
-	 * @param title
-	 * @param body
+	 * @param title title of the notification
+	 * @param body  body of the notification
 	 * @return {@link Notification}
 	 */
 	public Notification createNotification(String title, String body) {
