@@ -1,65 +1,43 @@
-import { LitElement } from "lit-element";
+window.notify = {
+  isSupported: true,
 
-class NotifyV14 extends LitElement {
-  static get properties() {
-    return {
-      supported: { type: Boolean },
-    };
-  }
-
-  constructor() {
-    super();
-    this.supported = true;
-  }
-
-  async connectedCallback() {
-    super.connectedCallback();
-
-    // Initial check if Notification is supported
+  requestPermission: async function () {
     if (!("Notification" in window)) {
-      this.supported = false;
+      this.isSupported = false;
     }
-  }
+    let per = await Notification.requestPermission();
+    return per;
+  },
 
-  _requestPermission() {
-    if (!this.supported) return;
-    let self = this;
-    Notification.requestPermission().then((res) => {
-      self.dispatchEvent(
-        new CustomEvent("requested-permission", {
-          detail: {
-            permission: res,
-          },
-        })
-      );
-    });
-  }
+  sendNotification: function (id, title, body, icon, delay) {
+    if (!this.isSupported) return;
 
-  _sendNotification(id, title, body, icon) {
-    if (!this.supported) return;
-    var notification = new Notification(title, {
+    const notifyDiv = document.getElementById(id);
+
+    const notification = new Notification(title, {
       body: body,
       icon: icon,
     });
-    var self = this;
+
     notification.onclick = function (event) {
       event.preventDefault();
-      self.dispatchEvent(
+      notifyDiv.dispatchEvent(
         new CustomEvent("notification-click", {
           detail: {
             id: id,
           },
         })
       );
+      notifyDiv.remove();
     };
     notification.onerror = async function (event) {
       event.preventDefault();
-      let permission = await Notification.requestPermission();
-      let errorMsg = "Not Specified."
+      let permission = Notification.permission;
+      let errorMsg = "Not Specified.";
       if (permission !== "granted") {
-          errorMsg = "Insufficient Permissions.";
+        errorMsg = "Insufficient Permissions.";
       }
-      self.dispatchEvent(
+      notifyDiv.dispatchEvent(
         new CustomEvent("notification-error", {
           detail: {
             id: id,
@@ -67,10 +45,11 @@ class NotifyV14 extends LitElement {
           },
         })
       );
+      notifyDiv.remove();
     };
     notification.onshow = function (event) {
       event.preventDefault();
-      self.dispatchEvent(
+      notifyDiv.dispatchEvent(
         new CustomEvent("notification-show", {
           detail: {
             id: id,
@@ -80,15 +59,20 @@ class NotifyV14 extends LitElement {
     };
     notification.onclose = function (event) {
       event.preventDefault();
-      self.dispatchEvent(
+      notifyDiv.dispatchEvent(
         new CustomEvent("notification-close", {
           detail: {
             id: id,
           },
         })
       );
+      notifyDiv.remove();
     };
-  }
-}
 
-customElements.define("notify-v14", NotifyV14);
+    if (delay !== undefined) {
+      setTimeout(function () {
+        notification.close();
+      }, delay);
+    }
+  },
+};

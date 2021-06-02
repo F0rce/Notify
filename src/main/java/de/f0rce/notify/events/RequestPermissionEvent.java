@@ -1,24 +1,31 @@
 package de.f0rce.notify.events;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.DomEvent;
 import com.vaadin.flow.component.EventData;
 
-import de.f0rce.notify.Notify;
+import de.f0rce.notify.util.NotifyJsProvider;
 
-@DomEvent("requested-permission")
-public class RequestPermissionEvent extends ComponentEvent<Notify> {
+public class RequestPermissionEvent extends ComponentEvent<NotifyJsProvider> {
 
-	private String permission;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3116933775226230769L;
+	private boolean permission;
 
-	public RequestPermissionEvent(Notify source, boolean fromClient,
-			@EventData("event.detail.permission") String permission) {
+	public RequestPermissionEvent(NotifyJsProvider source, boolean fromClient,
+			@EventData("event.detail.permission") boolean permission) {
 		super(source, fromClient);
 
 		this.permission = permission;
 	}
 
-	public String getPermission() {
+	/**
+	 * Returns if the user accepts notifications or not.
+	 * 
+	 * @return boolean
+	 */
+	public boolean hasPermission() {
 		return this.permission;
 	}
 

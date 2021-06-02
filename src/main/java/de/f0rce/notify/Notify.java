@@ -1,144 +1,185 @@
 package de.f0rce.notify;
 
+import java.io.Serializable;
 import java.util.Objects;
-import java.util.UUID;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Tag;
-import com.vaadin.flow.component.dependency.JsModule;
-import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.UI;
 
-import de.f0rce.notify.events.NotificationClickEvent;
-import de.f0rce.notify.events.NotificationCloseEvent;
-import de.f0rce.notify.events.NotificationErrorEvent;
-import de.f0rce.notify.events.NotificationShowEvent;
 import de.f0rce.notify.events.RequestPermissionEvent;
+import de.f0rce.notify.util.Notification;
+import de.f0rce.notify.util.NotifyJsProvider;
+import de.f0rce.notify.util.NotifyUtil;
 
-@Tag("notify-v14")
-@JsModule("./@f0rce/notify/notify.js")
-public class Notify extends Component {
+public class Notify implements Serializable {
 
-	public static String PERMISSION_GRANTED = "granted";
-	public static String PERMISSION_DENIED = "denied";
-	public static String PERMISSION_DEFAULT = "default";
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5577403258951246980L;
 
-	private String permission = null;
+	/**
+	 * All needed JavaScript Methods that need to be sent to the frontend.
+	 * 
+	 * @author david.dodlek
+	 */
+	public interface JS_METHODS {
+		String REQUEST_PERMISSION = "return window.notify.requestPermission()";
+		String GET_PERMISSION = "return Notification.permission";
+		String SEND_NOTIFICATION_FULL = "window.notify.sendNotification($0, $1, $2, $3)";
+		String SEND_NOTIFICATION_NO_ICON = "window.notify.sendNotification($0, $1, $2)";
+		String SEND_NOTIFICATION_FULL_DELAY = "window.notify.sendNotification($0, $1, $2, $3, $4)";
+	}
 
-	public Notify() {
+	private final UI defaultUI;
+	private final NotifyJsProvider jsProvider = new NotifyJsProvider();
+
+	private boolean hasPermission = false;
+
+	public Notify(UI notifyUI) {
+		this.defaultUI = notifyUI;
+
+		notifyUI.add(jsProvider);
+
+		this.updatePermission();
 	}
 
 	/**
 	 * Request the permission to send notifications to the user.
-	 * 
-	 * @param action an action to be run after the promise in the frontend has been
-	 *               resolved
-	 */
-	public void requestPermission(Runnable action) {
-		Objects.requireNonNull(action);
-		addListener(RequestPermissionEvent.class, event -> runAfterPermsissionRequest(event, action));
-		getElement().callJsFunction("_requestPermission");
-	}
-
-	private void runAfterPermsissionRequest(RequestPermissionEvent event, Runnable action) {
-		this.permission = event.getPermission();
-		event.unregisterListener();
-		action.run();
-	}
-
-	/**
-	 * Request the permission to send notifications to the user. Everything is
-	 * happening in the background so the current permission
-	 * {@link #getPermission()} <b>could</b> not reflect the current permission.
 	 */
 	public void requestPermission() {
-		addListener(RequestPermissionEvent.class, event -> {
-			this.permission = event.getPermission();
-			event.unregisterListener();
+		NotifyUtil.securelyAccessUI(defaultUI,
+				() -> defaultUI.getPage().executeJs(JS_METHODS.REQUEST_PERMISSION).then(String.class, permission -> {
+					if (permission == "granted") {
+						this.hasPermission = true;
+					} else {
+						this.hasPermission = false;
+					}
+					ComponentUtil.fireEvent(jsProvider, new RequestPermissionEvent(jsProvider, false, hasPermission));
+				}));
+	}
+
+	/**
+	 * Get the current permission. (Returned value may not be synced!)
+	 * 
+	 * @return
+	 */
+	public boolean getPermission() {
+		updatePermission();
+		return this.hasPermission;
+
+	}
+
+	public void runAfterGetPermission(Runnable action) {
+		Objects.requireNonNull(action);
+		updatePermission(action);
+	}
+
+	private void updatePermission() {
+		NotifyUtil.securelyAccessUI(defaultUI, () -> {
+			defaultUI.getPage().executeJs(JS_METHODS.GET_PERMISSION).then(String.class, permission -> {
+				if (permission.equals("granted")) {
+					this.hasPermission = true;
+				} else {
+					this.hasPermission = false;
+				}
+			});
 		});
-		getElement().callJsFunction("_requestPermission");
+	}
+
+	private void updatePermission(Runnable action) {
+		NotifyUtil.securelyAccessUI(defaultUI, () -> {
+			defaultUI.getPage().executeJs(JS_METHODS.GET_PERMISSION).then(String.class, permission -> {
+				if (permission.equals("granted")) {
+					this.hasPermission = true;
+					action.run();
+				} else {
+					this.hasPermission = false;
+					action.run();
+				}
+			});
+		});
 	}
 
 	/**
-	 * Get the current permission.
+	 * Send a notification to the user. Make sure you requested the permission
+	 * already {@link #requestPermission()}. Only the
+	 * {@link Notification#onClick(com.vaadin.flow.component.ComponentEventListener)}
+	 * and the
+	 * {@link Notification#onClose(com.vaadin.flow.component.ComponentEventListener)}
+	 * events will work due to the other events being sent before the listeners can
+	 * be added. If you want to listen to those events aswell, be sure to use
+	 * {@link #createNotification(String, String)} or
+	 * {@link #createNotification(String, String, String)} --> add the listeners you
+	 * need and use {@link Notification#send()} / {@link Notification#send(int)}
+	 * afterwards.
 	 * 
-	 * @return returned {@link String} can be granted, denied or default (which is
-	 *         interpreted by the browser as denied aswell).
-	 */
-	public String getPermission() {
-		return this.permission;
-	}
-
-	/**
-	 * Send a notification to the user.
-	 * 
-	 * @param title the title
-	 * @param body  the description
-	 * @param icon  an url to the icon
-	 * @return a random generated {@link String} id to differentiate the
-	 *         notifications
-	 */
-	public String sendNotification(String title, String body, String icon) {
-		String _id = UUID.randomUUID().toString();
-		getElement().callJsFunction("_sendNotification", _id, title, body, icon);
-		return _id;
-	}
-
-	/**
-	 * Send a notification to the user.
-	 * 
-	 * @param id    a {@link String} to give the notification a "name"
 	 * @param title the title
 	 * @param body  the description
 	 * @param icon  an url to the icon (can also be an uri or filepath)
-	 * @return the set id
+	 * @return {@link Notification}
 	 */
-	public String sendNotification(String id, String title, String body, String icon) {
-		getElement().callJsFunction("_sendNotification", id, title, body, icon);
-		return id;
+	public Notification sendNotification(String title, String body, String icon) {
+		Notification notification = new Notification(defaultUI, title, body, icon);
+		NotifyUtil.securelyAccessUI(defaultUI, () -> {
+			defaultUI.add(notification);
+			defaultUI.getPage().executeJs(JS_METHODS.SEND_NOTIFICATION_FULL, notification.getIdentifier(),
+					notification.getTitle(), notification.getBody(), notification.getIcon());
+		});
+		return notification;
 	}
 
 	/**
-	 * Adds a listener which listens to the "onclick" event sent by the
-	 * notifications.
+	 * Send a notification to the user. Make sure you requested the permission
+	 * already {@link #requestPermission()}. Only the
+	 * {@link Notification#onClick(com.vaadin.flow.component.ComponentEventListener)}
+	 * and the
+	 * {@link Notification#onClose(com.vaadin.flow.component.ComponentEventListener)}
+	 * events will work due to the other events being sent before the listeners can
+	 * be added. If you want to listen to those events aswell, be sure to use
+	 * {@link #createNotification(String, String)} or
+	 * {@link #createNotification(String, String, String)} --> add the listeners you
+	 * need and use {@link Notification#send()} / {@link Notification#send(int)}
+	 * afterwards.
 	 * 
-	 * @param listener {@link NotificationClickEvent}
-	 * @return {@link Registration}
+	 * @param title the title
+	 * @param body  the description
+	 * @return {@link Notification}
 	 */
-	public Registration addNotificationClickListener(ComponentEventListener<NotificationClickEvent> listener) {
-		return addListener(NotificationClickEvent.class, listener);
+	public Notification sendNotification(String title, String body) {
+		Notification notification = new Notification(defaultUI, title, body);
+		NotifyUtil.securelyAccessUI(defaultUI, () -> {
+			defaultUI.add(notification);
+			defaultUI.getPage().executeJs(JS_METHODS.SEND_NOTIFICATION_NO_ICON, notification.getIdentifier(),
+					notification.getTitle(), notification.getBody());
+		});
+		return notification;
 	}
 
 	/**
-	 * Adds a listener which listens to the "onerror" event sent by the
-	 * notifications.
+	 * Creates a notification but doesn't send it right away. Make sure to use
+	 * {@link Notification#send()} or {@link Notification#send(int)} to send it to
+	 * the user.
 	 * 
-	 * @param listener {@link NotificationErrorEvent}
-	 * @return {@link Registration}
+	 * @param title
+	 * @param body
+	 * @param icon
+	 * @return {@link Notification}
 	 */
-	public Registration addNotificationErrorListener(ComponentEventListener<NotificationErrorEvent> listener) {
-		return addListener(NotificationErrorEvent.class, listener);
+	public Notification createNotification(String title, String body, String icon) {
+		return new Notification(defaultUI, title, body, icon);
 	}
 
 	/**
-	 * Adds a listener which listens to the "onshow" event sent by the
-	 * notifications.
+	 * Creates a notification but doesn't send it right away. Make sure to use
+	 * {@link Notification#send()} or {@link Notification#send(int)} to send it to
+	 * the user.
 	 * 
-	 * @param listener {@link NotificationShowEvent}
-	 * @return {@link Registration}
+	 * @param title
+	 * @param body
+	 * @return {@link Notification}
 	 */
-	public Registration addNotificationShowListener(ComponentEventListener<NotificationShowEvent> listener) {
-		return addListener(NotificationShowEvent.class, listener);
-	}
-
-	/**
-	 * Adds a listener which listens to the "onclose" event sent by the
-	 * notifications.
-	 * 
-	 * @param listener {@link NotificationCloseEvent}
-	 * @return {@link Registration}
-	 */
-	public Registration addNotificationCloseListener(ComponentEventListener<NotificationCloseEvent> listener) {
-		return addListener(NotificationCloseEvent.class, listener);
+	public Notification createNotification(String title, String body) {
+		return new Notification(defaultUI, title, body);
 	}
 }
