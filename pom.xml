@@ -4,14 +4,14 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>de.f0rce.notify</groupId>
-	<artifactId>notifyv14</artifactId>
-	<version>1.0.0</version>
+	<groupId>org.vaadin.addons.notify</groupId>
+	<artifactId>notify</artifactId>
+	<version>1.0.3</version>
 	<name>NotifyV14</name>
-	<description>Send desktop notifications to the user with help of the Notification API.</description>
+	<description>Send web push notifications to the user with help of the Notification API.</description>
 
 	<properties>
-		<vaadin.version>14.6.1</vaadin.version>
+		<vaadin.version>14.6.2</vaadin.version>
 
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
@@ -260,6 +260,18 @@
 						<artifactId>maven-jar-plugin</artifactId>
 						<version>3.1.2</version>
 						<configuration>
+							<archive>
+								<index>true</index>
+								<manifest>
+									<addClasspath>false</addClasspath>
+									<addDefaultImplementationEntries>true
+									</addDefaultImplementationEntries>
+								</manifest>
+								<manifestEntries>
+									<Vaadin-Package-Version>1</Vaadin-Package-Version>
+									<Implementation-Vendor>n/a</Implementation-Vendor>
+								</manifestEntries>
+							</archive>
 							<!-- Generated file that shouldn't be included in add-ons -->
 							<excludes>
 								<exclude>META-INF/VAADIN/config/flow-build-info.json</exclude>
