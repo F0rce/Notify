@@ -6,12 +6,12 @@
 
 	<groupId>org.vaadin.addons.notify</groupId>
 	<artifactId>notify</artifactId>
-	<version>1.0.3</version>
+	<version>1.1.0</version>
 	<name>NotifyV14</name>
 	<description>Send web push notifications to the user with help of the Notification API.</description>
 
 	<properties>
-		<vaadin.version>14.6.2</vaadin.version>
+		<vaadin.version>14.6.8</vaadin.version>
 
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>

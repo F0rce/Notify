@@ -1,7 +1,6 @@
 package de.f0rce.notify.events;
 
 import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.EventData;
 
 import de.f0rce.notify.util.NotifyJsProvider;
 
@@ -13,8 +12,7 @@ public class RequestPermissionEvent extends ComponentEvent<NotifyJsProvider> {
 	private static final long serialVersionUID = 3116933775226230769L;
 	private boolean permission;
 
-	public RequestPermissionEvent(NotifyJsProvider source, boolean fromClient,
-			@EventData("event.detail.permission") boolean permission) {
+	public RequestPermissionEvent(NotifyJsProvider source, boolean fromClient, boolean permission) {
 		super(source, fromClient);
 
 		this.permission = permission;

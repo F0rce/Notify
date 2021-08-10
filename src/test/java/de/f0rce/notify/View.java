@@ -21,7 +21,13 @@ public class View extends Div {
 			notify.requestPermission();
 		});
 		button2.addClickListener(event -> {
-			System.out.println(notify.getPermission());
+			notify.runAfterGetPermission(new Runnable() {
+
+				@Override
+				public void run() {
+					System.out.println(notify.getPermission());
+				}
+			});
 		});
 		button3.addClickListener(event -> {
 			Notification noti = notify.createNotification("test", "test",

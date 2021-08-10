@@ -21,7 +21,7 @@ public class Notify implements Serializable {
 	/**
 	 * All needed JavaScript Methods that need to be sent to the frontend.
 	 * 
-	 * @author david.dodlek
+	 * @author David "F0rce" Dodlek
 	 */
 	public interface JS_METHODS {
 		String REQUEST_PERMISSION = "return window.notify.requestPermission()";
@@ -60,9 +60,9 @@ public class Notify implements Serializable {
 	}
 
 	/**
-	 * Returns if the permission has been granted by the user (Returned value may
-	 * not be synced). Use {@link #runAfterGetPermission(Runnable)} if you want to
-	 * make sure, the value is 100 % up to date with the server.
+	 * Returns if the permission has been granted by the user (returned value may
+	 * <strong>not</strong> be synced). Use {@link #runAfterGetPermission(Runnable)}
+	 * if you want to make sure, the value is 100 % up to date with the server.
 	 * 
 	 * @return boolean
 	 */
